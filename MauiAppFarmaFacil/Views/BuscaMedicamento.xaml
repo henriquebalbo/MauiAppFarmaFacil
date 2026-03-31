@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="FarmaFacil.Views.BuscaMedicamento"
+             Title="Farma Fácil - Busca">
+
+    <VerticalStackLayout Padding="20" Spacing="10">
+
+        <Label Text="Sistema Farma Fácil"
+               FontSize="28"
+               HorizontalOptions="Center"
+               TextColor="Aquamarine"/>
+
+        <SearchBar x:Name="searchBar" 
+                   Placeholder="Buscar medicamento..." 
+                   SearchButtonPressed="OnSearchButtonPressed" />
+
+        <CollectionView x:Name="listaMedicamentos">
+            <CollectionView.ItemTemplate>
+                <DataTemplate>
+                    <Frame Margin="0,5"
+                           Padding="15"
+                           BorderColor="#D1D1D1"
+                           CornerRadius="10"
+                           BackgroundColor="White">
+
+                        <HorizontalStackLayout Spacing="10">
+                            <VerticalStackLayout>
+                                <Label Text="{Binding Nome}"
+                                       FontAttributes="Bold"
+                                       FontSize="18"/>
+
+                                <Label Text="{Binding PrincipioAtivo}"
+                                       FontSize="14"
+                                       TextColor="Gray"/>
+                            </VerticalStackLayout>
+                        </HorizontalStackLayout>
+
+                    </Frame>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+
+    </VerticalStackLayout>
+</ContentPage>

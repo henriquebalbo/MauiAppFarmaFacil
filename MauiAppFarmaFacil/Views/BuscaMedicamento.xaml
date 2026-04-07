@@ -1,45 +1,153 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             x:Class="FarmaFacil.Views.BuscaMedicamento"
-             Title="Farma Fácil - Busca">
+             x:Class="MauiAppFarmaFacil.Views.BuscaMedicamento"
+             BackgroundColor="#F0F4F8">
 
-    <VerticalStackLayout Padding="20" Spacing="10">
+    <NavigationPage.TitleView>
+        <Label Text="Portal de Transparência de Medicamentos"
+               FontSize="24" 
+               TextColor="White"
+               VerticalTextAlignment="Center"
+               FontAttributes="None" />
+    </NavigationPage.TitleView>
 
-        <Label Text="Sistema Farma Fácil"
-               FontSize="28"
-               HorizontalOptions="Center"
-               TextColor="Aquamarine"/>
+    <Grid RowDefinitions="Auto,Auto,*">
 
-        <SearchBar x:Name="searchBar" 
-                   Placeholder="Buscar medicamento..." 
-                   SearchButtonPressed="OnSearchButtonPressed" />
+        <!-- Cabeçalho -->
+        <VerticalStackLayout Grid.Row="0"
+                             BackgroundColor="#1565C0"
+                             Padding="20,30,20,20"
+                             Spacing="4">
+            <Label Text="🏥 Farma Fácil"
+                   TextColor="White"
+                   FontSize="26"
+                   FontAttributes="Bold"
+                   HorizontalOptions="Center"/>
+            <Label Text="Encontre medicamentos do SUS perto de você!"
+                   TextColor="#BBDEFB"
+                   FontSize="13"
+                   HorizontalOptions="Center"/>
+        </VerticalStackLayout>
 
-        <CollectionView x:Name="listaMedicamentos">
-            <CollectionView.ItemTemplate>
-                <DataTemplate>
-                    <Frame Margin="0,5"
-                           Padding="15"
-                           BorderColor="#D1D1D1"
-                           CornerRadius="10"
-                           BackgroundColor="White">
+        <!-- Barra de busca -->
+        <VerticalStackLayout Grid.Row="1"
+                             BackgroundColor="White"
+                             Padding="16,12"
+                             Spacing="10">
+            <SearchBar x:Name="searchBar"
+                       Placeholder="Buscar medicamento ou princípio ativo..."
+                       SearchButtonPressed="OnSearchButtonPressed"
+                       TextChanged="OnTextChanged"
+                       BackgroundColor="#F5F5F5"
+                       CancelButtonColor="#1565C0"/>
 
-                        <HorizontalStackLayout Spacing="10">
-                            <VerticalStackLayout>
-                                <Label Text="{Binding Nome}"
-                                       FontAttributes="Bold"
-                                       FontSize="18"/>
+            <!-- Indicador de carregamento -->
+            <ActivityIndicator x:Name="loadingIndicator"
+                               IsRunning="False"
+                               IsVisible="False"
+                               Color="#1565C0"
+                               HorizontalOptions="Center"/>
+        </VerticalStackLayout>
 
-                                <Label Text="{Binding PrincipioAtivo}"
-                                       FontSize="14"
-                                       TextColor="Gray"/>
-                            </VerticalStackLayout>
-                        </HorizontalStackLayout>
+        <!-- Área de resultados -->
+        <Grid Grid.Row="2">
 
-                    </Frame>
-                </DataTemplate>
-            </CollectionView.ItemTemplate>
-        </CollectionView>
+            <!-- Estado vazio / instrução inicial -->
+            <VerticalStackLayout x:Name="emptyState"
+                                 VerticalOptions="Center"
+                                 HorizontalOptions="Center"
+                                 Spacing="10"
+                                 Padding="30">
+                <Label Text="💊" FontSize="60" HorizontalOptions="Center"/>
+                <Label Text="Digite o nome de um medicamento"
+                       FontSize="16"
+                       TextColor="#666"
+                       HorizontalOptions="Center"
+                       HorizontalTextAlignment="Center"/>
+                <Label Text="Exemplo: Paracetamol, Ibuprofeno, Losartana"
+                       FontSize="13"
+                       TextColor="#999"
+                       HorizontalOptions="Center"
+                       HorizontalTextAlignment="Center"/>
+            </VerticalStackLayout>
 
-    </VerticalStackLayout>
+            <!-- Lista de medicamentos encontrados -->
+            <CollectionView x:Name="listaMedicamentos"
+                            IsVisible="False"
+                            Margin="0,8,0,0">
+                <CollectionView.Header>
+                    <Label x:Name="lblResultados"
+                           Margin="16,8,16,0"
+                           TextColor="#555"
+                           FontSize="13"/>
+                </CollectionView.Header>
+
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <Border Margin="12,4"
+                                BackgroundColor="White"
+                                StrokeShape="RoundRectangle 12"
+                                StrokeThickness="0"
+                                Shadow="{OnPlatform Android={x:Null}, Default={x:Null}}">
+                            <!-- iOS/Android: sem Shadow nativo via XAML básico; use Elevation/Card alternativo -->
+                            <Grid Padding="16,14" ColumnDefinitions="*,Auto">
+                                <VerticalStackLayout Grid.Column="0" Spacing="2">
+                                    <Label Text="{Binding Nome}"
+                                           FontAttributes="Bold"
+                                           FontSize="17"
+                                           TextColor="#1A237E"/>
+                                    <Label Text="{Binding PrincipioAtivo}"
+                                           FontSize="13"
+                                           TextColor="#555"/>
+                                    <HorizontalStackLayout Spacing="8" Margin="0,4,0,0">
+                                        <Border BackgroundColor="#E3F2FD"
+                                                StrokeShape="RoundRectangle 6"
+                                                StrokeThickness="0"
+                                                Padding="8,3">
+                                            <Label Text="{Binding Dosagem}"
+                                                   FontSize="12"
+                                                   TextColor="#1565C0"
+                                                   FontAttributes="Bold"/>
+                                        </Border>
+                                        <Label Text="{Binding Fabricante}"
+                                               FontSize="12"
+                                               TextColor="#888"
+                                               VerticalOptions="Center"/>
+                                    </HorizontalStackLayout>
+                                </VerticalStackLayout>
+
+                                <Button Grid.Column="1"
+                                        Text="Ver onde"
+                                        FontSize="12"
+                                        BackgroundColor="#1565C0"
+                                        TextColor="White"
+                                        CornerRadius="8"
+                                        Padding="10,8"
+                                        VerticalOptions="Center"
+                                        CommandParameter="{Binding .}"
+                                        Clicked="OnVerUnidadesClicked"/>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+
+                <CollectionView.EmptyView>
+                    <VerticalStackLayout VerticalOptions="Center"
+                                         HorizontalOptions="Center"
+                                         Padding="30" Spacing="10">
+                        <Label Text="🔍" FontSize="50" HorizontalOptions="Center"/>
+                        <Label Text="Nenhum medicamento encontrado"
+                               FontSize="15"
+                               TextColor="#666"
+                               HorizontalOptions="Center"/>
+                        <Label Text="Tente outro nome ou princípio ativo"
+                               FontSize="13"
+                               TextColor="#999"
+                               HorizontalOptions="Center"/>
+                    </VerticalStackLayout>
+                </CollectionView.EmptyView>
+            </CollectionView>
+        </Grid>
+    </Grid>
 </ContentPage>

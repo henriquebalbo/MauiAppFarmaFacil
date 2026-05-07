@@ -6,7 +6,7 @@
 
     <NavigationPage.TitleView>
         <Label Text="Portal de Transparência de Medicamentos"
-               FontSize="24" 
+               FontSize="20" 
                TextColor="White"
                VerticalTextAlignment="Center"
                FontAttributes="None" />

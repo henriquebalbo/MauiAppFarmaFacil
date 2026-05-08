@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:maps="clr-namespace:Microsoft.Maui.Controls.Maps;assembly=Microsoft.Maui.Controls.Maps"
              x:Class="MauiAppFarmaFacil.Views.UnidadesDeSaude"
              BackgroundColor="#F0F4F8">
 
-    <Grid RowDefinitions="Auto,Auto,*">
+    <Grid RowDefinitions="Auto,Auto,Auto,*">
 
-        <!-- Cabeçalho dinâmico com nome do medicamento -->
+        <!-- Row 0: Cabeçalho dinâmico com nome do medicamento -->
         <VerticalStackLayout Grid.Row="0"
                              BackgroundColor="#1565C0"
                              Padding="16,20,16,16"
@@ -21,7 +22,7 @@
                    FontSize="13"/>
         </VerticalStackLayout>
 
-        <!-- Controle de localização -->
+        <!-- Row 1: Controle de localização -->
         <Grid Grid.Row="1"
               BackgroundColor="White"
               Padding="16,10"
@@ -42,9 +43,49 @@
                     Clicked="OnUsarLocalizacaoClicked"/>
         </Grid>
 
-        <!-- Lista de unidades -->
+        <!-- Row 2: Seção expansível do mapa (oculta até obter localização) -->
+        <Border x:Name="secaoMapa"
+                Grid.Row="2"
+                IsVisible="False"
+                BackgroundColor="White"
+                StrokeThickness="0"
+                Margin="0,0,0,2">
+            <VerticalStackLayout Spacing="0">
+
+                <!-- Cabeçalho clicável para expandir/colapsar -->
+                <Grid BackgroundColor="#E3F2FD"
+                      Padding="16,10"
+                      ColumnDefinitions="*,Auto">
+                    <Label Grid.Column="0"
+                           Text="🗺️ Ver unidades no mapa"
+                           FontSize="14"
+                           FontAttributes="Bold"
+                           TextColor="#1565C0"
+                           VerticalOptions="Center"/>
+                    <Label Grid.Column="1"
+                           x:Name="lblSetaMapa"
+                           Text="▼"
+                           FontSize="13"
+                           TextColor="#1565C0"
+                           VerticalOptions="Center"/>
+                    <Grid.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnToggleMapaClicked"/>
+                    </Grid.GestureRecognizers>
+                </Grid>
+
+                <!-- Mapa (visível/oculto pelo toggle) -->
+                <maps:Map x:Name="mapaUnidades"
+                          IsVisible="False"
+                          HeightRequest="260"
+                          IsShowingUser="True"
+                          MapType="Street"/>
+
+            </VerticalStackLayout>
+        </Border>
+
+        <!-- Row 3: Lista de unidades -->
         <CollectionView x:Name="listaUnidades"
-                        Grid.Row="2"
+                        Grid.Row="3"
                         Margin="0,8,0,0">
             <CollectionView.Header>
                 <Label x:Name="lblQtdUnidades"
@@ -61,28 +102,24 @@
                             StrokeThickness="0">
                         <Grid Padding="16,14" RowDefinitions="Auto,Auto,Auto,Auto">
 
-                            <!-- Nome da unidade -->
                             <Label Grid.Row="0"
                                    Text="{Binding Nome}"
                                    FontAttributes="Bold"
                                    FontSize="16"
                                    TextColor="#1A237E"/>
 
-                            <!-- Endereço -->
                             <Label Grid.Row="1"
                                    Text="{Binding Endereco, StringFormat='📍 {0}'}"
                                    FontSize="13"
                                    TextColor="#555"
                                    Margin="0,2,0,0"/>
 
-                            <!-- Horário e telefone -->
                             <HorizontalStackLayout Grid.Row="2" Spacing="16" Margin="0,4,0,0">
                                 <Label Text="{Binding HorarioFuncionamento, StringFormat='🕐 {0}'}"
                                        FontSize="12"
                                        TextColor="#777"/>
                             </HorizontalStackLayout>
 
-                            <!-- Quantidade e distância -->
                             <Grid Grid.Row="3" ColumnDefinitions="*,Auto" Margin="0,8,0,0">
                                 <HorizontalStackLayout Grid.Column="0" Spacing="8">
                                     <Border BackgroundColor="#E8F5E9"
@@ -125,9 +162,9 @@
             </CollectionView.EmptyView>
         </CollectionView>
 
-        <!-- Indicador de carregamento -->
+        <!-- Indicador de carregamento (sobrepõe a Row 3) -->
         <ActivityIndicator x:Name="loadingIndicator"
-                           Grid.Row="2"
+                           Grid.Row="3"
                            IsRunning="False"
                            IsVisible="False"
                            Color="#1565C0"

@@ -48,6 +48,8 @@ public class DatabaseService
 
     // ─── Inicialização ─────────────────────────────────────────────────────────
 
+
+
     private async Task Init()
     {
         if (_db is not null) return;
@@ -189,6 +191,7 @@ public class DatabaseService
     /// Em produção: GET /api/medicamentos?q={termo} → API RENAME/municipal.
     /// Aqui: consulta local na tabela Medicamento (espelho do catálogo RENAME).
     /// </summary>
+
     public async Task<List<Medicamento>> BuscarMedicamentos(string termo)
     {
         await Init();

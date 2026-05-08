@@ -1,19 +1,18 @@
 ﻿using MauiAppFarmaFacil.Models;
 using MauiAppFarmaFacil.Services;
+using Microsoft.Maui.Controls.Maps;
+using Microsoft.Maui.Maps;
 
 namespace MauiAppFarmaFacil.Views;
 
-/// <summary>
-/// UC2 - Consultar Unidades de Saúde Próximas
-/// Exibe unidades que possuem o medicamento selecionado em estoque.
-/// Inclui geolocalização para ordenação por proximidade.
-/// </summary>
 public partial class UnidadesDeSaude : ContentPage
 {
     private readonly Medicamento _medicamento;
     private readonly DatabaseService _dbService;
     private double _latUsuario;
     private double _lngUsuario;
+    private bool _mapaExpandido = false;
+    private List<UnidadeDeSaude> _ultimasUnidades = new();
 
     public UnidadesDeSaude(Medicamento medicamento, DatabaseService dbService)
     {
@@ -40,6 +39,27 @@ public partial class UnidadesDeSaude : ContentPage
     {
         await ObterLocalizacaoUsuario();
         await CarregarUnidades();
+
+        // Após obter localização, exibe e expande o mapa automaticamente
+        if (_latUsuario != 0 || _lngUsuario != 0)
+        {
+            secaoMapa.IsVisible = true;
+            _mapaExpandido = true;
+            mapaUnidades.IsVisible = true;
+            lblSetaMapa.Text = "▲";
+            AtualizarPinsMapa(_ultimasUnidades);
+        }
+    }
+
+    /// <summary>Abre ou fecha a seção do mapa ao tocar no cabeçalho.</summary>
+    private void OnToggleMapaClicked(object sender, EventArgs e)
+    {
+        _mapaExpandido = !_mapaExpandido;
+        mapaUnidades.IsVisible = _mapaExpandido;
+        lblSetaMapa.Text = _mapaExpandido ? "▲" : "▼";
+
+        if (_mapaExpandido)
+            CentralizarMapa();
     }
 
     /// <summary>UC3 - Navega para detalhes da unidade selecionada.</summary>
@@ -61,10 +81,15 @@ public partial class UnidadesDeSaude : ContentPage
             var unidades = await _dbService.ConsultarUnidadesComMedicamento(
                 _medicamento.CodMedicamento, _latUsuario, _lngUsuario);
 
+            _ultimasUnidades = unidades;
             listaUnidades.ItemsSource = unidades;
             lblQtdUnidades.Text = unidades.Count == 0
                 ? string.Empty
                 : $"{unidades.Count} unidade(s) com estoque disponível";
+
+            // Atualiza pins se o mapa já estiver visível
+            if (secaoMapa.IsVisible && _mapaExpandido)
+                AtualizarPinsMapa(unidades);
         }
         catch (Exception ex)
         {
@@ -116,10 +141,80 @@ public partial class UnidadesDeSaude : ContentPage
         }
     }
 
+    // ─── Mapa ──────────────────────────────────────────────────────────────────
+
+    private void AtualizarPinsMapa(List<UnidadeDeSaude> unidades)
+    {
+        mapaUnidades.Pins.Clear();
+
+        // Pin do usuário
+        if (_latUsuario != 0 || _lngUsuario != 0)
+        {
+            mapaUnidades.Pins.Add(new Pin
+            {
+                Label = "Minha localização",
+                Address = $"Lat: {_latUsuario:F4}, Lng: {_lngUsuario:F4}",
+                Location = new Location(_latUsuario, _lngUsuario),
+                Type = PinType.SavedPin
+            });
+        }
+
+        // Pins das unidades de saúde
+        foreach (var u in unidades)
+        {
+            if (u.Latitude == 0 && u.Longitude == 0) continue;
+
+            mapaUnidades.Pins.Add(new Pin
+            {
+                Label = u.Nome,
+                Address = $"{u.Endereco}  •  ✅ {u.QuantidadeDisponivel} unidades",
+                Location = new Location(u.Latitude, u.Longitude),
+                Type = PinType.Place
+            });
+        }
+
+        CentralizarMapa();
+    }
+
+    private void CentralizarMapa()
+    {
+        if (mapaUnidades.Pins.Count == 0 && _ultimasUnidades.Count > 0)
+            AtualizarPinsMapa(_ultimasUnidades);
+
+        var pontos = mapaUnidades.Pins.Select(p => p.Location).ToList();
+
+        if (pontos.Count == 0)
+        {
+            if (_latUsuario != 0 || _lngUsuario != 0)
+                mapaUnidades.MoveToRegion(MapSpan.FromCenterAndRadius(
+                    new Location(_latUsuario, _lngUsuario),
+                    Distance.FromKilometers(5)));
+            return;
+        }
+
+        var minLat = pontos.Min(p => p.Latitude);
+        var maxLat = pontos.Max(p => p.Latitude);
+        var minLng = pontos.Min(p => p.Longitude);
+        var maxLng = pontos.Max(p => p.Longitude);
+
+        var spanLat = Math.Max((maxLat - minLat) * 1.3, 0.01);
+        var spanLng = Math.Max((maxLng - minLng) * 1.3, 0.01);
+
+        mapaUnidades.MoveToRegion(new MapSpan(
+            new Location((minLat + maxLat) / 2, (minLng + maxLng) / 2),
+            spanLat, spanLng));
+    }
+
     private void SetLoading(bool carregando)
     {
         loadingIndicator.IsRunning = carregando;
         loadingIndicator.IsVisible = carregando;
-        listaUnidades.IsVisible = !carregando;
+
+        MainThread.BeginInvokeOnMainThread(async () =>
+        {
+            if (!carregando)
+                await Task.Delay(50);
+            listaUnidades.IsVisible = !carregando;
+        });
     }
 }

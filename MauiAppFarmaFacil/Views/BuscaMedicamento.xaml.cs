@@ -11,12 +11,16 @@ public partial class BuscaMedicamento : ContentPage
 {
     private readonly DatabaseService _dbService;
     private CancellationTokenSource? _debounceToken;
-
+    private bool _paginaPronta;
     public BuscaMedicamento(DatabaseService dbService)
     {
         InitializeComponent();
         _dbService = dbService;
     }
+
+   
+
+
 
     // ─── Eventos ───────────────────────────────────────────────────────────────
 
@@ -55,25 +59,35 @@ public partial class BuscaMedicamento : ContentPage
 
     private async Task RealizarBusca(string? termo)
     {
+        if (string.IsNullOrWhiteSpace(termo))
+        {
+            MostrarEstadoVazio();
+            return;
+        }
+
         SetLoading(true);
 
         try
         {
-            var resultados = await _dbService.BuscarMedicamentos(termo ?? string.Empty);
+            var resultados = await _dbService.BuscarMedicamentos(termo.Trim());
 
-            if (string.IsNullOrWhiteSpace(termo))
+            // Garante execução na thread principal e reseta o ItemsSource
+            // antes de atribuir o novo valor, evitando o erro de layout nulo
+            // no Android (ViewGroup$LayoutParams.width em objeto nulo).
+            await MainThread.InvokeOnMainThreadAsync(async () =>
             {
-                MostrarEstadoVazio();
-                return;
-            }
+                listaMedicamentos.IsVisible = false;
+                listaMedicamentos.ItemsSource = null;
+                listaMedicamentos.ItemsSource = resultados;
 
-            listaMedicamentos.ItemsSource = resultados;
-            listaMedicamentos.IsVisible = true;
-            emptyState.IsVisible = false;
+                lblResultados.Text = resultados.Count == 0
+                    ? string.Empty
+                    : $"{resultados.Count} medicamento(s) encontrado(s)";
 
-            lblResultados.Text = resultados.Count == 0
-                ? string.Empty
-                : $"{resultados.Count} medicamento(s) encontrado(s)";
+                emptyState.IsVisible = false;
+                await Task.Delay(50); // aguarda o próximo frame de layout
+                listaMedicamentos.IsVisible = true;
+            });
         }
         catch (Exception ex)
         {

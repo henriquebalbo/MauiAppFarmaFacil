@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using MauiAppFarmaFacil.Services;
 using MauiAppFarmaFacil.Views;
+using Microsoft.Maui.Controls.Maps; // Necessário para usar o Maps, mas pode ser desativado para evitar erros no Desktop
 
 namespace MauiAppFarmaFacil;
 
@@ -11,6 +12,7 @@ public static class MauiProgram
         var builder = MauiApp.CreateBuilder();
         builder
             .UseMauiApp<App>()
+            .UseMauiMaps() // Desativar para evitar erros relacionados ao Maps no Desktop
             .ConfigureFonts(fonts =>
             {
                 fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
